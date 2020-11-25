@@ -344,9 +344,8 @@ inline float3 GetCameraForward()     { return -UNITY_MATRIX_V[2].xyz;    }
 
 float3x3  rotationMatrix3(float3 v, float angle)
 {
-	float c = cos(radians(angle));
-	float s = sin(radians(angle));
-	
+	float c = cos(angle);
+	float s = sin(angle);
 	return float3x3(c + (1.0 - c) * v.x * v.x, (1.0 - c) * v.x * v.y - s * v.z, (1.0 - c) * v.x * v.z + s * v.y,
 		(1.0 - c) * v.x * v.y + s * v.z, c + (1.0 - c) * v.y * v.y, (1.0 - c) * v.y * v.z - s * v.x,
 		(1.0 - c) * v.x * v.z - s * v.y, (1.0 - c) * v.y * v.z + s * v.x, c + (1.0 - c) * v.z * v.z
@@ -359,7 +358,7 @@ float2 rot(float2 uv,float a){
 
 float getDepth(float3 pos)
 {
-        float4 sPos = UnityObjectToClipPos(float4(pos, 1.0));
+    float4 sPos = UnityObjectToClipPos(float4(pos, 1.0));
     #if defined(SHADER_TARGET_GLSL)
         return (sPos.z / sPos.w) * 0.5 + 0.5;
     #else 
@@ -368,7 +367,7 @@ float getDepth(float3 pos)
 }
 
 
-float LivingKIFS(float3 p) {
+float LivingKIFS(float3 p) { //based on https://www.shadertoy.com/view/MdS3zm
   float3 RotV=(0.5,-0.05,-0.5);
   float RotAngle=145.;
   float Scale=1.27;
