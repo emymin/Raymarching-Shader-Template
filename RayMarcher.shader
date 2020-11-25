@@ -209,7 +209,12 @@
                 #if WORLDSPACE
                 p=mul(unity_WorldToObject,float4(p,1));
                 #endif
+                #if OCCLUSION
                 o.depth=getDepth(p);
+                #endif
+                #if !OCCLUSION
+                o.depth=1;
+                #endif
                 return o;
             }
 

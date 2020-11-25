@@ -386,6 +386,29 @@ float LivingKIFS(float3 p) { //based on https://www.shadertoy.com/view/MdS3zm
 	return l*pow(Scale, -float(Iterations))*.9;
 }
 
+float mandelbulb(float3 pos) {
+  float Power = 7;
+	float3 z = pos;
+	float dr = 1.0;
+	float r = 0.0;
+	for (int i = 0; i < 16 ; i++) {
+		r = length(z);
+		if (r>1.5) break;
+		
+		float theta = acos(z.z/r);
+		float phi = atan2(z.y,z.x);
+		dr =  pow( r, Power-1.0)*Power*dr + 1.0;
+		
+		float zr = pow( r,Power);
+		theta = theta*Power;
+		phi = phi*Power;
+
+		z = zr*float3(sin(theta)*cos(phi), sin(phi)*sin(theta), cos(theta));
+		z+=pos;
+	}
+	return 0.5*log(r)*r/dr;
+}
+
 #define samplerfunction(uv) noise(uv)
 float4 boxmap(in float3 p, in float3 n, in float k )
 {
