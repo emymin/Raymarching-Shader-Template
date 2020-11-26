@@ -368,7 +368,7 @@ float getDepth(float3 pos)
 
 
 float LivingKIFS(float3 p) { //based on https://www.shadertoy.com/view/MdS3zm
-  float3 RotV=(0.5,-0.05,-0.5);
+  float3 RotV=float3(0.5,-0.05,-0.5);
   float RotAngle=145.;
   float Scale=1.27;
   float Julia=float3(-2.,-1.5,-.5);
