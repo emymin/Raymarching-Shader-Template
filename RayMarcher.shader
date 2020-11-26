@@ -6,7 +6,7 @@
     }
     SubShader
     {
-        Tags { "RenderType"="Opaque" "LightMode" = "ForwardBase" "Queue"="Geometry" } //Overlay-1 if transparent
+        Tags { "RenderType"="Opaque" "Queue"="Geometry" } //Overlay-1 if transparent
         LOD 100
         //ZTest Always
         //ZWrite Off
@@ -15,6 +15,7 @@
         //main pass, renders color and depth
         Pass
         {
+            Tags {"LightMode"="ForwardBase"}
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
@@ -106,7 +107,7 @@
 			float Raymarch(float3 ro, float3 rd) {
 				float dO = 0;
 				float dS;
-				for (int i = 0; i < 100; i++) {
+				for (int i = 0; i < MAX_STEPS; i++) {
 					float3 p = ro + rd * dO;
 					dS = GetDist(p);
 					dO += dS;
@@ -137,30 +138,50 @@
                 return float4(0,0,0,1);
             }
 
+            //LIGHTING
             //====================
 
-            float3 CalculateLighting(float3 p,float3 n){
+            float3 LightColor(float3 p,float3 n,float3 lightPos,float3 lightColor,float attenuation){
+                
+                #if !WORLDSPACE
+                lightPos=mul(unity_WorldToObject,float4(lightPos,1));
+                #endif
+                
+
+                float3 lightVec = p-lightPos;
+                float3 lightDir = normalize(lightVec);
+
+                float light = saturate(dot(n,lightPos));
+                light/=1+attenuation*dot(lightVec,lightVec);
+
+                return lightColor*light;
+            }
+
+            float3 CalculateLighting(float3 p,float3 n,float3 col){
                 
                 float3 lightColor=1;
                 
                 #if LIGHTING
-                float3 lightDir = normalize(_WorldSpaceLightPos0-p);
-                float light;
-                light= max(0, dot(n,_WorldSpaceLightPos0));
+                lightColor=0;
 
-                #if SHADOWS
-                float d = Raymarch(p+n*SURF_DIST*2,lightDir);
-                if(d<length(p-_WorldSpaceLightPos0)){
-                    light*=0.3;
-                }
-                #endif
+                float3 lightPos=_WorldSpaceLightPos0;
+                lightColor+=LightColor(p,n,lightPos,_LightColor0,1);
                 
-                lightColor = _LightColor0*light;
+                /*float fac;
+                for(int i=0;i<4;i++){
+                    lightPos=(unity_4LightPosX0[i], unity_4LightPosY0[i], unity_4LightPosZ0[i]);
+                    lightColor+=LightColor(p,n,lightPos,unity_LightColor[i],unity_4LightAtten0[i]);
+                }*/
+                
                 lightColor+=ShadeSH9(half4(n,1));
+
                 #endif
 
-                return lightColor;
+                return lightColor*col;
             }
+            
+            //FRAG
+            //======================
 
             fragOutput frag (v2f i) //: SV_Target
             {
@@ -185,10 +206,13 @@
                 #endif*/
 
                 if(d<MAX_DIST){
+                    
                     float3 n = GetNormal(p);
                     float2 uv = GetUV(p,n);
                     col = GetColorUV(uv);
-                    col.rgb*=CalculateLighting(p,n);
+                    
+                    col.rgb=CalculateLighting(p,n,col.rgb);
+
                     #if INSIDE_COLOR
                     if(d<0){
                         col=GetInsideColor(p);
@@ -206,11 +230,13 @@
 
                 o.color=col;
                 
+
                 #if WORLDSPACE
                 p=mul(unity_WorldToObject,float4(p,1));
                 #endif
                 #if OCCLUSION
                 o.depth=getDepth(p);
+                if(d<0) o.depth=1;
                 #endif
                 #if !OCCLUSION
                 o.depth=1;
